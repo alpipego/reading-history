@@ -4,7 +4,10 @@ from urllib.parse import urlparse
 class UrlSorter:
     def __init__(self):
         self.search_engines = self._helper_read_file('./search_engines.txt')
-        self.blocklist = self._helper_read_file('./blocklist.txt')
+        try:
+            self.blocklist = self._helper_read_file('./blocklist.txt')
+        except FileNotFoundError:
+            self.blocklist = []
 
     def filter_urls(self, urls):
         filtered = []
@@ -17,12 +20,8 @@ class UrlSorter:
         return filtered
 
     def _helper_read_file(self, file_path):
-        try:
-            with open(file_path, 'r') as file:
-                lines = [line.rstrip('\n') for line in file.readlines()]
-        except FileNotFoundError:
-            print(f"Sorry, the file {file_path} does not exist.")
-            lines = []
+        with open(file_path, 'r') as file:
+            lines = [line.rstrip('\n') for line in file.readlines()]
 
         return lines
 
