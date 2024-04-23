@@ -1,0 +1,63 @@
+from urllib.parse import urlparse
+
+
+class UrlSorter:
+    def __init__(self):
+        self.search_engines = self._helper_read_file('./search_engines.txt')
+        self.blocklist = self._helper_read_file('./blocklist.txt')
+
+    def filter_urls(self, urls):
+        filtered = []
+        for url in urls:
+            try:
+                filtered.append(self.is_valid(url))
+            except ValueError:
+                pass
+
+        return filtered
+
+    def _helper_read_file(self, file_path):
+        try:
+            with open(file_path, 'r') as file:
+                lines = [line.rstrip('\n') for line in file.readlines()]
+        except FileNotFoundError:
+            print(f"Sorry, the file {file_path} does not exist.")
+            lines = []
+
+        return lines
+
+    def _is_search_engine(self, url: str) -> bool:
+        """Check if the given URL belongs to a known search engine."""
+        return any(se for se in self.search_engines if url.startswith(se))
+
+    def _is_root_domain(self, url: str) -> bool:
+        """Check if the URL is for the root domain (homepage)."""
+        parsed_url = urlparse(url)
+        if parsed_url.path in ('', '/', '/index.html'):
+            return True
+        return False
+
+    def _is_local_domain(self, url: str) -> bool:
+        parsed_url = urlparse(url)
+        netloc = parsed_url.netloc.split(':')[0]
+        # Check if the domain is localhost, a bare IP address, or a .dev domain
+        if netloc == 'localhost' or netloc.endswith('.dev') or netloc.replace('.', '').isdigit():
+            return True
+        return False
+
+
+    def _is_blocklisted(self, url: str) -> bool:
+        return any(blocked for blocked in self.blocklist if url.startswith(blocked))
+
+    def is_valid(self, url: str) -> str:
+        # Remove search engine entries, root domain entries, local domains,
+        # IP addresses and user-defined blocked items
+        if (
+                not self._is_search_engine(url)
+                and not self._is_root_domain(url)
+                and not self._is_local_domain(url)
+                and not self._is_blocklisted(url)
+        ):
+            return url
+        else:
+            raise ValueError(f"Invalid URL: {url}")
