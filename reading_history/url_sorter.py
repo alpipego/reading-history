@@ -26,38 +26,37 @@ class UrlSorter:
 
         return lines
 
-    def _is_search_engine(self, url: str) -> bool:
+    def _is_search_engine(self, url: str):
         """Check if the given URL belongs to a known search engine."""
-        return any(se for se in self.search_engines if url.startswith(se))
+        if any(se for se in self.search_engines if url.startswith(se)):
+            raise ValueError('Search Engine URL')
 
-    def _is_root_domain(self, url: str) -> bool:
+    def _is_root_domain(self, url: str):
         """Check if the URL is for the root domain (homepage)."""
         parsed_url = urlparse(url)
         if parsed_url.path in ('', '/', '/index.html'):
-            return True
-        return False
+            raise ValueError('Root domain')
 
-    def _is_local_domain(self, url: str) -> bool:
+    def _is_local_domain(self, url: str):
         parsed_url = urlparse(url)
         netloc = parsed_url.netloc.split(':')[0]
         # Check if the domain is localhost, a bare IP address, or a .dev domain
-        if netloc == 'localhost' or netloc.endswith('.dev') or netloc.replace('.', '').isdigit():
-            return True
-        return False
+        if netloc == 'localhost' or netloc.replace('.', '').isdigit():
+            raise ValueError('Local/development domain or IP address')
 
-
-    def _is_blocklisted(self, url: str) -> bool:
-        return any(blocked for blocked in self.blocklist if url.startswith(blocked))
+    def _is_blocklisted(self, url: str):
+        if any(blocked for blocked in self.blocklist if url.startswith(blocked)):
+            raise ValueError('Manually blocklisted URL')
 
     def is_valid(self, url: str) -> str:
         # Remove search engine entries, root domain entries, local domains,
         # IP addresses and user-defined blocked items
-        if (
-                not self._is_search_engine(url)
-                and not self._is_root_domain(url)
-                and not self._is_local_domain(url)
-                and not self._is_blocklisted(url)
-        ):
+        try:
+            self._is_blocklisted(url)
+            self._is_root_domain(url)
+            self._is_local_domain(url)
+            self._is_search_engine(url)
+
             return url
-        else:
-            raise ValueError(f"Invalid URL: {url}")
+        except ValueError as e:
+            raise ValueError(f'{url}: {e}')
