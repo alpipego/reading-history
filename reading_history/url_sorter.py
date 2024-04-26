@@ -59,3 +59,10 @@ class UrlSorter:
             return url
         except ValueError as e:
             raise ValueError(f'{url}: {e}')
+
+    def is_valid_callback(self, url: str) -> bool:
+        try:
+            self.is_valid(url)
+            return True
+        except ValueError:
+            return False
