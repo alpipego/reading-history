@@ -3,9 +3,9 @@ from urllib.parse import urlparse
 
 class UrlSorter:
     def __init__(self):
-        self.search_engines = self._helper_read_file('./search_engines.txt')
+        self.search_engines = self._helper_read_file('./config/search_engines.txt')
         try:
-            self.blocklist = self._helper_read_file('./blocklist.txt')
+            self.blocklist = self._helper_read_file('./config/blocklist.txt')
         except FileNotFoundError:
             self.blocklist = []
 

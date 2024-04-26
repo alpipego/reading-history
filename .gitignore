@@ -5,9 +5,7 @@ env/
 __pycache__/
 
 .env
-blocklist.txt
+config/blocklist.txt
 
 cache/*
 !cache/.gitkeep
-places/*
-!places/.gitkeep

@@ -11,12 +11,6 @@ class Obsidian:
         self.obsidian_vault_path = os.getenv('OBSIDIAN_VAULT_PATH')
         self.obsidian_path = os.getenv('OBSIDIAN_PATH', '%Y/%m-%B/%Y-%m-%d Browsing.md')
 
-    def results_to_markdown(self, results):
-        markdown_content = ''
-        for result in results:
-            markdown_content += f"{result}\n\n"
-        return markdown_content
-
     def save_to_obsidian(self, markdown_content):
         full_path = os.path.join(self.obsidian_vault_path, self.now.strftime(self.obsidian_path))
         # ensure the path exists

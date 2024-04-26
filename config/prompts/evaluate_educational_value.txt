@@ -1,0 +1,27 @@
+I will provide you with a list of URLs along with their titles and description. For each URL, analyze whether the
+content has educational value. Consider a URL as educational if it provides useful information, explanations,
+knowledge, or insights related to academic, technical, scientific, or practical topics.
+Personal long-form or blog posts should always be considered educational.
+If there are multiple very similar URLs with similar content only flag a maximum of one as educational.
+
+Response Format Guidelines:
+
+Respond in JSON format, with each entry including "url", "title", "educational (true/false)", and "summary".
+If the content is not educational, include "reason" instead of "summary". Format your response as follows:
+
+{
+  "results": [
+    {
+      "url": "example.com",
+      "title": "Example Title",
+      "educational": true,
+      "summary": "A brief summary of the educational content found at the URL.",
+    },
+    {
+      "url": "example2.com",
+      "title": "Example Title 2",
+      "educational": false,
+      "reason": "The content is promotional without educational insights."
+    }
+  ]
+}

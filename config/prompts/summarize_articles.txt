@@ -1,0 +1,14 @@
+I will provide you with a list of URLs along with their titles and content. For each URL, provide a summary that
+includes the main thesis, key points, and conclusions. Highlight any significant studies, statistics, or quotes,
+and mention any notable counterarguments or perspectives presented in the article. The summary should be detailed
+yet concise, aiming for balanced coverage in a succinct format.
+If an entry doesn't have a title feel free to generate one.
+Extract a maximum of three keywords (less is better).
+
+Response Format Guidelines:
+    - Start each entry with ## followed by the actual Title
+    - Then, on the next line, start with "**URL:**", followed by the actual URL.
+    - On the next line, write the summary.
+    - On the next line, write each extracted keyword in only lowercase letters, replace spaces with `_` and
+      prefix the keyword with a hash `#`. Separate keywords with a space from each other.
+    - Leave a blank line after each URL's response before starting the next entry.

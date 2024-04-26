@@ -1,3 +1,4 @@
+import inspect
 import os
 
 from openai import AsyncOpenAI
@@ -7,69 +8,42 @@ from reading_history.llm.ai_interface import AIInterface
 
 class OpenAIGPT(AIInterface):
     def __init__(self):
+        super().__init__()
         self.client = AsyncOpenAI(
             organization=os.getenv('OPENAI_API_ORG', None),
             project=os.getenv('OPENAI_API_PROJECT', None)
         )
         self.model_name = os.getenv('OPENAI_API_MODEL', 'gpt-4-turbo')
-        self.max_tokens = os.getenv('OPENAI_API_MAX_TOKENS', 4096)
 
-    def chunk_data_based_on_tokens(self, data, avg_char_per_token=4, buffer=250):
-        """
-        Chunk the data into portions that respect the model's max token limit.
-        avg_char_per_token is a rough estimation, adjust based on experimentation.
-        buffer is to leave space for the model's responses.
-        """
-        chunk_size_in_chars = ((self.max_tokens - buffer) * avg_char_per_token)  # Convert token limit to char limit
-        chunks = []
-        current_chunk = []
+    async def evaluate_educational_value(self, data):
+        print('Sending articles to OpenAI API for evaluation')
+        filename = inspect.currentframe().f_code.co_name
+        response = await self._send_request(filename, data)
 
-        for item in data:
-            # Example item serialization into prompt text
-            item_text = f"URL: {item[0]}, Title: {item[1]}, Description: {item[2]}\nEvaluate: "
-            if sum(len(x) for x in current_chunk) + len(item_text) > chunk_size_in_chars:
-                chunks.append(current_chunk)
-                current_chunk = []
-            current_chunk.append(item)
+        self._dump_educational_decision(response.choices[0].message.content)
 
-        if current_chunk:  # Add any remaining items as a final chunk
-            chunks.append(current_chunk)
+    async def summarize_articles(self, data):
+        print('Sending articles for summarization to OpenAI API')
+        filename = inspect.currentframe().f_code.co_name
+        response = await self._send_request(filename, data)
 
-        return chunks
+        self._dump_summaries(response.choices[0].message.content)
 
-    async def analyze(self, data):
+    async def _send_request(self, filename: str, data: list):
+        with open(os.path.join(self.prompts_dir, f"{filename}.txt"), 'r') as f:
+            system_prompt = f.read()
+
         messages = [{
             "role": "system",
-            "content": (
-                "I will provide you with a list of URLs along with their titles and content. For each URL, "
-                "analyze whether the content has educational value. Consider a URL as educational if it "
-                "provides useful information, explanations, knowledge, or insights related to academic, "
-                "technical, scientific, or practical topics.\n\n"
-                "Response Format Guidelines:\n"
-                "- If a URL has educational content, start each entry with ## followed by the actual Title\n"
-                "  - Then, on the next line, start with '**URL:**', followed by the actual URL.\n"
-                "  - On the next line, start with '**Content Summary:**', followed by a concise summary.\n"
-                "- If a URL does not have educational content, explain why under the heading '**Explanation:**' "
-                "after stating the URL and Title.\n"
-                "- Leave a blank line after each URL's response before starting the next entry.\n\n"
-                "Here is the list of URLs and their respective titles and content:\n"
-            )
+            "content": system_prompt
+        }, {
+            'role': 'user',
+            'content': '\n'.join(data)
         }]
-
-        user_message = ''
-        for entry in data:
-            url, title, content = entry
-            user_message += f"## {title}\n**URL:** {url}\n**Content:** {content}\n\n"
-
-        messages.append({
-            "role": "user",
-            "content": user_message
-        })
 
         response = await self.client.chat.completions.create(
             model=self.model_name,
-            messages=messages,
-            max_tokens=self.max_tokens
+            messages=messages
         )
 
-        return response.choices[0].message.content
+        return response
