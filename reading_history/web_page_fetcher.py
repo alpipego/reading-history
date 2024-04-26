@@ -5,55 +5,70 @@ from datetime import datetime, timedelta
 from hashlib import md5
 
 import requests
-from boilerpy3 import extractors
+from newsplease import NewsPlease, NewsArticle
 
 
 class WebPageFetcher:
     def __init__(self):
         self.cache = CachePageFetcher();
-        self.extractor = extractors.ArticleExtractor()
 
-    def fetch_and_parse(self, url: str):
-        """Fetch the web page content, parse it, and return the actual content."""
-        content = self._get_content_for_url(url)
+    def get_article(self, url: str) -> NewsArticle:
+        content = self.get_content_for_url(url)
+        article = NewsPlease.from_html(content)
 
+        return article
+
+    def get_content_for_url(self, url: str) -> str:
         try:
-            # Using Boilerpy3 for boilerplate removal
-            return self.extractor.get_content(content)
-        except Exception as e:
-            raise RuntimeError(f"Failed to process URL {url} due to error: {e}")
+            cached_content = self.cache.fetch_from_cache(url)
+            return cached_content
+        except ValueError as e:
+            print(e)
 
-    def _get_content_for_url(self, url: str) -> str:
-        cached_content = self.cache.fetch_from_cache(url)
-        if cached_content:
-            content = cached_content
-        else:
-            # noinspection PyBroadException
             try:
                 response = requests.get(url, headers={
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:125.0) Gecko/20100101 Firefox/125.0'
                 })
+            # noinspection PyBroadException
             except:
                 print("Failed to fetch URL:", url)
                 print(traceback.format_exc())  # Save details about the exception
                 response = None  # Set response as None
 
             if response is None or response.status_code != 200:
-                raise ValueError({'Failed to fetch web page', url, response})
-            else:
-                content = response.text
-                self.cache.save_to_cache(url, content)
+                self.cache.save_to_cache(url, '')
+                raise ValueError(f'Failed to fetch web page {url}')
 
-        return content
+            if 'text/html' in response.headers.get('Content-Type'):
+                try:
+                    self.cache.save_to_cache(url, response.text)
+                    return response.text
+                except Exception as e:
+                    raise RuntimeError(f"Failed to process URL {url} due to error: {e}")
+            else:
+                self.cache.save_to_cache(url, '')
+                raise ValueError(f'This is not HTML content {url}')
+
+    def get_website_data(self, url):
+        data = {}
+        article = self.get_article(url)
+        if not article:
+            raise ValueError('No article found at {}'.format(url))
+
+        data['url'] = url
+        data['title'] = article.title
+
+        if article.maintext:
+            data['content'] = article.maintext[:2000]
+        else:
+            raise ValueError('No article found at {}'.format(url))
+
+        return data
 
 
 class CachePageFetcher:
     def __init__(self, cache_base_dir='cache'):
         self.cache_base_dir = cache_base_dir
-
-        # Ensure the cache dir exists
-        if not os.path.exists(cache_base_dir):
-            os.makedirs(cache_base_dir)
 
         # Create a new cache directory for today's date
         today = datetime.now().strftime('%Y%m%d')
@@ -67,13 +82,14 @@ class CachePageFetcher:
         url_hash = md5(url.encode('utf-8')).hexdigest()
         return os.path.join(self.cache_today_dir, url_hash + '.cache')
 
-    def fetch_from_cache(self, url):
+    def fetch_from_cache(self, url) -> str:
         """Try to fetch the cached content of a URL."""
         cache_path = self._get_cache_path(url)
         if os.path.exists(cache_path):
             with open(cache_path, 'r') as file:
                 return file.read()
-        return None
+
+        raise ValueError('No cache file found for URL {}'.format(url))
 
     def save_to_cache(self, url, content):
         """Save the content of a URL to the cache."""
