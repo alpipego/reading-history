@@ -7,7 +7,7 @@ from reading_history.run_config import RunConfig, RunCache
 
 class AIInterface:
     def __init__(self):
-        self.max_tokens = int(os.getenv('AI_API_MAX_TOKENS', 4096))
+        self.max_tokens = int(os.getenv('AI_API_MAX_TOKENS', 100000))
         self.prompts_dir = 'config/prompts'
 
     def evaluate_educational_value(self, data):
