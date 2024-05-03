@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 
-from reading_history.firefox import read_history
+from reading_history.firefox import Firefox
 from reading_history.llm.open_ai import OpenAIGPT
 from reading_history.obsidian import Obsidian
 from reading_history.run_config import RunConfig, RunCache
@@ -36,12 +36,16 @@ async def process_ai_responses(directory, fetcher, file_extension):
 
 
 async def run():
-    print('Getting the firefox history...')
     ai = OpenAIGPT()
     fetcher = WebPageFetcher()
     url_sorter = UrlSorter()
+    date = RunConfig().date
+    cache = RunCache()
+    firefox = Firefox(cache)
 
-    entries = list(filter(url_sorter.is_valid_callback, read_history()))
+    print('Getting the firefox history...')
+    firefox.copy_places_db()
+    entries = list(filter(url_sorter.is_valid_callback, firefox.read_history(date)))
     print('There are {} entries'.format(len(entries)))
 
     website_data = await fetcher.get_website_data(entries)
@@ -49,14 +53,14 @@ async def run():
     print('Processing {} chunks'.format(len(website_chunks)))
     await asyncio.gather(*[ai.evaluate_educational_value(chunk) for chunk in website_chunks])
 
-    results_dir = RunCache().educational_cache
+    results_dir = cache.educational_cache
     refined_results = await process_ai_responses(results_dir, fetcher, '.json')
 
     refined_chunks = ai.chunk_data_based_on_tokens(refined_results)
     print('Processing {} chunks'.format(len(refined_chunks)))
     await asyncio.gather(*[ai.summarize_articles(chunk) for chunk in refined_chunks])
 
-    summaries_dir = RunCache().summaries_cache
+    summaries_dir = cache.summaries_cache
     markdown_content = ''
     for file in os.listdir(summaries_dir):
         if not os.path.splitext(file)[1] == '.md':
@@ -64,5 +68,5 @@ async def run():
         with open(os.path.join(summaries_dir, file), 'r') as f:
             markdown_content += f.read() + '\n'
 
-    obsidian = Obsidian()
+    obsidian = Obsidian(date)
     obsidian.save_to_obsidian(markdown_content)

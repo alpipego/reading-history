@@ -8,10 +8,12 @@ from datetime import datetime, timedelta
 class RunConfig:
     _instance = None
 
-    def __new__(cls):
+    def __new__(cls, date: datetime=None):
+        print(type(date), 'hello')
         if cls._instance is None:
             cls._instance = super(RunConfig, cls).__new__(cls)
             cls._instance._run_id = cls._generate_run_id()
+            cls._instance._date = date
         return cls._instance
 
     @staticmethod
@@ -23,14 +25,18 @@ class RunConfig:
         return time + '_' + suffix
 
     @property
-    def run_id(self):
+    def run_id(self) -> str:
         return self._run_id
+
+    @property
+    def date(self) -> datetime:
+        return self._date
 
 
 class RunCache:
     _instance = None
 
-    def __new__(cls, run_id=None):
+    def __new__(cls, run_id: str = None):
         if cls._instance is None:
             RunCache._instance = super(RunCache, cls).__new__(cls)
 
@@ -45,26 +51,25 @@ class RunCache:
         return RunCache._instance
 
     @property
-    def cache(self):
+    def cache(self) -> str:
         return self._cache
 
     @property
-    def documents_cache(self):
+    def documents_cache(self) -> str:
         return self._documents_cache
 
     @property
-    def educational_cache(self):
+    def educational_cache(self) -> str:
         return self._educational_cache
 
     @property
-    def summaries_cache(self):
+    def summaries_cache(self) -> str:
         return self._summaries_cache
 
     def delete_caches(self):
         # Get the date for outdated cache
         outdated = datetime.now() - timedelta(days=7)
         self.delete_run_caches(outdated)
-        pass
 
     @staticmethod
     def delete_run_caches(outdated):

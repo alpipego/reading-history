@@ -1,3 +1,4 @@
-openai==1.23.3
+dateparser==1.2.0
 news-please==1.5.44
 python-dotenv==1.0.1
+openai==1.23.3

@@ -22,6 +22,12 @@ Here are the environment variables that you can set in your `.env` file for this
 <dt>OBSIDIAN_PATH</dt> <dd>The specific path inside Obsidian. If not set, it defaults to representing the current date in the %Y/%m-%B/%Y-%m-%d Browsing.md format: year/month-month name/date Browsing.md.</dd>
 </dl>
 
+### Flags
+
+* `--date=<str>` If you want to get the history for another day, pass a `date` flag to the program. It's capable of handling different absolute and relative date formats; e.g., `2024-04-30` or `yesterday`.
+    
+    `python main.py --date=yesterday`
+
 ### URL Filters
 
 Currently, URL filters will only be applied with a simple `url.startswith(<string>)` check.
